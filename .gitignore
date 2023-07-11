@@ -1,0 +1,24 @@
+# .gitignore
+
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+*.venv
+.env
+
+# Jupyter notebook files
+.ipynb_checkpoints/
+
+# Build and distribution directories
+build/
+dist/
+*.egg-info/
+
+# OS related
+.DS_Store
+Thumbs.db
