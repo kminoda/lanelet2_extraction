@@ -10,5 +10,9 @@ setup(
     packages=find_packages(),
     install_requires=[
         # list of your dependencies
+        "numpy",
+        "opencv-python",
+        "scipy",
+        "shapely",
     ],
 )
