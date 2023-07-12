@@ -24,6 +24,51 @@ COLOR_MAPS_RGB = {
     'contours': (51, 255, 255),  # yellow
 }
 
+LINE_TYPE_MAPPING = {
+    # "WAY_TYPE/RELATIONS_SUBTYPE": ID
+    # Road
+    "line_thin:road": 1,
+    "line_thick:road": 1,
+    "pedestrian_marking:road": -1,
+    "road_border:road": 2,
+    "virtual:road": -1,
+
+    # Crosswalk
+    # "line_thin:crosswalk": 3,
+    # "line_thick:crosswalk": 3,
+    # "pedestrian_marking:crosswalk": 3,
+    # "road_border:crosswalk": 3,
+    # "virtual:crosswalk": 3,
+    "line_thin:crosswalk": -1,
+    "line_thick:crosswalk": -1,
+    "pedestrian_marking:crosswalk": -1,
+    "road_border:crosswalk": -1,
+    "virtual:crosswalk": -1,
+
+    # Walkway
+    "line_thin:walkway": -1,
+    "line_thick:walkway": -1,
+    "pedestrian_marking:walkway": -1,
+    "road_boader:walkway": -1,
+    "virtual:walkway": -1,
+
+    # Stop_line not supported yet, since some of them are not associated to relation, making it difficult to extract
+    # Traffic light
+    "stop_line:traffic_light": 0,
+
+    # None
+    "stop_line:none": 0,
+    "road_border:none": 2,
+    "curbstone:none": 2,
+}
+
+CLASS2LABEL = {
+    'stop_line': 0,
+    'divider': 1,
+    'contours': 2,
+    # 'ped_crossing': 3,
+    'others': -1,
+}
 
 def get_possible_map_names_from_dataset(dataroot):
     metadata_path = Path(dataroot) / 'metadata.json'
@@ -40,9 +85,8 @@ class Lanelet2Extractor(object):
                  dataroot='',
                  extract_distance=250,
                  roi_size=(60, 30),
-                 line_type_mapping=dict(),
-                 class2label=dict(),
-                 output_type="MapTR"):
+                 line_type_mapping=LINE_TYPE_MAPPING,
+                 class2label=CLASS2LABEL):
         super().__init__()
 
         map_name_list = get_possible_map_names_from_dataset(dataroot)
@@ -52,49 +96,12 @@ class Lanelet2Extractor(object):
             self.lanelet2_maps[map_name] = load_lanelet2_my(map_path)
             print(f'Finished loading map {map_path}')
 
-        # self.normalize = normalize
         self.roi_size = roi_size
         self.size = np.array([self.roi_size[0], self.roi_size[1]]) + 2
         self.line_type_mapping = line_type_mapping
         self.label2class = {v:k for k, v in class2label.items()}
-        self.output_type = output_type
 
-        # ##################### TODO #####################
-        # self.distance = np.max(roi_size) / 2
-        # ##################### TODO #####################
-
-    def extract(self, pose: List[float], map_name: str) -> dict:
-        if self.output_type == 'MapTR':
-            return self.load_maptr_type(pose, map_name)
-        elif self.output_type == "VectorMapNet":
-            return self.load_vectormapnet_type(pose, map_name)
-        else:
-            raise NotImplementedError
-
-    def load_maptr_type(self, pose: List[float], map_name: str) -> dict:
-        vectors_dict_3d = self.vectorization(pose, map_name, normalize=False)
-
-        gt_labels = []
-        gt_instance = []
-        for label, polylines_3d in vectors_dict_3d.items():
-            for polyline_3d in polylines_3d:
-                polyline_2d = polyline_3d[:, [1, 0]]
-                polyline_2d[:, 0] *= -1
-                polyline_shapely_2d = LineString(polyline_2d)
-                gt_instance.append(polyline_shapely_2d)
-                gt_labels.append(label)
-        return gt_labels, gt_instance
-
-    def load_vectormapnet_type(self, pose: List[float], map_name: str) -> dict:
-        vectors_dict_3d = self.vectorization(pose, map_name, normalize=True)
-        vectors_dict_2d = {label: [
-                np.array(polyline)[:, :2] for polyline in polylines
-            ] for label, polylines in vectors_dict_3d.items()}
-        # vectors_list_2d = self.flatten_vectors_dict(vectors_dict_2d)
-
-        return vectors_dict_3d
-
-    def vectorization(self, pose: List[float], map_name: str, normalize: bool) -> Dict[int, List[List[Tuple[float, float]]]]:
+    def extract(self, pose: List[float], map_name: str, normalize: bool) -> Dict[int, List[List[Tuple[float, float]]]]:
         assert len(pose) == 7, "pose should be [px, py, pz, qx, qy, qz, qw]"
 
         lanelet2_map = self.lanelet2_maps[map_name]
@@ -143,6 +150,7 @@ class Lanelet2Extractor(object):
 
         for line_string in lanelet2_map.lineStringLayer:
             # Check if the line type is of interest
+
             way_type = line_string.attributes['type']
             relation_subtype = get_relation_subtype(lanelet2_map, line_string)
             line_type = f'{way_type}:{relation_subtype}'
@@ -163,7 +171,6 @@ class Lanelet2Extractor(object):
                 if label not in vectors.keys():
                     vectors[label] = []
                 polylines_local_filtered = filter_polyline_by_roi_size(polyline_local, roi_size)
-                # print('===================KOJI====================')
                 # if len(polylines_local_filtered) == 0: ## DEBUG
                 #     _ = filter_polyline_by_roi_size(polyline_local, roi_size, debug=True)
                 #     # import matplotlib.pyplot as plt
