@@ -1,6 +1,4 @@
-# in extractor.py
 import json
-import cv2
 import numpy as np
 from pathlib import Path
 import warnings
@@ -118,7 +116,6 @@ class Lanelet2Extractor(object):
 
         for line_string in lanelet2_map.lineStringLayer:
             # Check if the line type is of interest
-
             way_type = line_string.attributes['type']
             relation_subtype = get_relation_subtype(lanelet2_map, line_string)
             line_type = f'{way_type}:{relation_subtype}'
@@ -131,17 +128,10 @@ class Lanelet2Extractor(object):
             polyline_all = line_string2list3d(line_string)
 
             polylines = extract_near_polylines(pose, polyline_all, distance)
-            # if 'stop_line' in line_type:
-            #     print(f'{line_type} found, and extracted length: {len(polylines)}')
 
             for polyline in polylines:
                 polyline_local = global2local(polyline, pose)
                 polylines_local_filtered = filter_polyline_by_roi_size(polyline_local, roi_size)
-                # if len(polylines_local_filtered) == 0: ## DEBUG
-                #     _ = filter_polyline_by_roi_size(polyline_local, roi_size, debug=True)
-                #     # import matplotlib.pyplot as plt
-                #     # plt.plot(np.array(polyline_local)[:, 0], np.array(polyline_local)[:, 1], marker='x', linestyle='--')
-                #     # plt.savefig('/mount_hdd/vectormap_ws/test.png')
                 if normalize:
                     polylines_local_filtered = [normalize_line(p, roi_size) for p in polylines_local_filtered]
                 for polyline_local_filtered in polylines_local_filtered:
@@ -201,10 +191,8 @@ def filter_polyline_by_roi_size(polyline: List[List[float]], roi_size: Tuple[int
             interval_points = rectangle_line_segment_intersection(prev_point, cur_point, roi_size)
             if len(interval_points) == 2:
                 polylines_filtered.append(interval_points)
-                # print('here!2', interval_points, cur_point, prev_point)
             if debug:
                 print(f'{cur_point}: x-x')
-                print(f'KOJI!!!!!!!!!!1 {interval_points}')
 
         if i == len(polyline) - 1 and point_within_area and len(polyline_tmp) > 0:
             polylines_filtered.append(polyline_tmp)
