@@ -14,5 +14,6 @@ setup(
         "opencv-python",
         "scipy",
         "shapely",
+        "av2",
     ],
 )
