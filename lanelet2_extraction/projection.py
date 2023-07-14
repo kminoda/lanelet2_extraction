@@ -9,13 +9,13 @@ from .constants import COLOR_MAPS_RGB, CLASS2LABEL
 
 
 def project_lanelet2_on_image(
+    img: np.ndarray,
     labeled_polylines: LabeledPolylines,
-    img: np.ndaray,
     extrinsic: np.ndarray,
     intrinsic: np.ndarray,
-    thickness: float = 2.0,
-    color_maps_rgb: Dict() = COLOR_MAPS_RGB,
-    class2label: Dict() = CLASS2LABEL,
+    thickness: int = 2,
+    color_maps_rgb: dict = COLOR_MAPS_RGB,
+    class2label: dict = CLASS2LABEL,
 ):
     id2category_name = {v: k for k, v in class2label.items()}
     ego2img = _get_ego2img(extrinsic, intrinsic)
