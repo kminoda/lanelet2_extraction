@@ -9,6 +9,7 @@ IMG_PATH = 'data/camera0.png'  # 1675660188245933056_camera0.png
 EXTRINSICS_INV_PATH = 'data/extrinsics.json'
 INTRINSICS_PATH = 'data/intrinsics.json'
 POSE_PATH = 'data/pose.json'
+MAP_NAME = 'odaiba-yabloc'
 
 with open(EXTRINSICS_INV_PATH) as f:
     extrinsics_inv = np.array(json.load(f)['data'])
@@ -18,11 +19,10 @@ with open(POSE_PATH) as f:
     pose = np.array(json.load(f)['pose'])
 img = cv2.imread(IMG_PATH)
 
-extrinsics = np.linalg.inv(extrinsics_inv)
+extrinsics = np.linalg.inv(extrinsics_inv)  # Need to take inverse since the original json is base_link -> map
 
 extractor = Lanelet2Extractor(dataroot=DATA_ROOT_PATH)
-map_name = 'odaiba-yabloc'
-extracted_polylines = extractor.extract(pose, map_name, normalize=False)
+extracted_polylines = extractor.extract(pose, MAP_NAME, normalize=False)
 
 img = project_lanelet2_on_image(img, extracted_polylines, extrinsics, intrinsics)
 
